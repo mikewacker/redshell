@@ -3,7 +3,7 @@
 ## Overview
 
 Red Shell is a tool that augments the capabilities of [ShellNoob](https://github.com/reyammer/shellnoob).
-Frequently, buffers have restrictions on which characters are allowed.
+Frequently, buffers have restrictions on which bytes are allowed.
 Red Shell helps you both detect and fix prohibited bytes in your shellcode.
 
 You could say that ShellNoob produces the green shell, and Red Shell helps home the shellcode-based attack
@@ -17,7 +17,7 @@ Let's assume that we found a buffer overflow vulnerability in an x86 application
 scanf("name: %s", buffer)  // Buffer can overflow!
 ```
 
-To develop an exploit for this buffer overflow, you can download some
+To develop an exploit for this buffer overflow, you could download some
 [shellcode from shell-storm](http://shell-storm.org/shellcode/files/shellcode-827.php),
 but this shellcode won't work out of the box.
 
@@ -52,16 +52,11 @@ int 0x80                         # cd80
 prohibited bytes found
 ```
 
-Notes:
-
-*   Red Shell supports any input format that ShellNoob supports.
-*   Red Shell also has the `--64` and `--intel` options.
-*   Red Shell can use either a custom blacklist or a custom whitelist.
-*   By default, Red Shell will check for nulls (00) and newlines (0a).
+It looks like the `mov al, 0xb` instruction contains a prohibited byte: `0b`. `scanf()` will treat this byte as a delimiter.
 
 ### Fixing Prohibited Bytes
 
-Now that we know which instruction is bad \[`mov al, 0xb`\], let's try to find a way to replace it. Red Shell has one additional format that can let us directly test assembly instructions.
+Next, let's try to find a way to replace this instruction. Red Shell has one additional format that can let us directly test assembly instructions.
 
 ```
 > ./redshell.py --from-asm-text 'mov al,0x3b; sub al,0x30' --blacklist=00,09-0d,20 --intel
@@ -79,4 +74,13 @@ sub al,0x30                      # 2c30
 no prohibited bytes found
 ```
 
-Now we can patch up our shellcode with these new instructions, and we have shellcode that works for this buffer.
+Now we can patch our shellcode with these new instructions, and we have shellcode that works for this buffer.
+
+## Notes
+
+*   Input Formats
+    *   Red Shell supports any input format that ShellNoob supports.
+    *   Red Shell also supports ShellNoob's `--64` and `--intel` options.
+*   Prohibited Bytes
+    *   Red Shell can use either a custom `--blacklist` or a custom `--whitelist`.
+    *   By default, Red Shell will check for nulls \[`00`\] and newlines \[`0a`\].
