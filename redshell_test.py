@@ -56,7 +56,8 @@ class RedShellTestCase(unittest.TestCase):
         snoob = ShellNoob(flag_64_bit=True, flag_intel=True)
         hexcode = "31db31c0b03c0f05"
         blacklist = "0f,31,90"
-        inss = redshell.pba(snoob, hexcode, blacklist=blacklist)
+        inss = redshell.prohibited_bytes_analysis(
+            snoob, hexcode, blacklist=blacklist)
         expected_inss = [
             redshell.InsX(ins="xor ebx,ebx", hex="31db", index=0, bytes=[
                 redshell.ByteX(byte=b"\x31", hex="31", index=0)]),

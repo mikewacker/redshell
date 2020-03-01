@@ -70,8 +70,9 @@ def main(argv):
     hexcode = extract_hex_code(snoob, args.fmt, args.fp)
     hexdump = hex_dump(hexcode)
     print_hex_dump(hexdump)
-    inss = pba(snoob, hexcode, args.blacklist, args.whitelist)
-    print_pba(inss)
+    inss = prohibited_bytes_analysis(
+        snoob, hexcode, args.blacklist, args.whitelist)
+    print_prohibited_bytes_analysis(inss)
 
 def extract_hex_code(snoob, fmt, fp):
     """Extracts the shellcode in hex form."""
@@ -117,7 +118,7 @@ def print_hex_dump(hexdump):
     print("--------\nHex Dump\n--------")
     print(hexdump)
 
-def print_pba(inss):
+def print_prohibited_bytes_analysis(inss):
     """Prints the prohibited bytes."""
     print("--------\nAssembly\n--------")
     num_prohibited_bytes = 0
@@ -138,7 +139,7 @@ def print_pba(inss):
 InsX = collections.namedtuple("InsX", ["ins", "hex", "bytes", "index"])
 ByteX = collections.namedtuple("ByteX", ["byte", "hex", "index"])
 
-def pba(snoob, hexcode, blacklist=None, whitelist=None):
+def prohibited_bytes_analysis(snoob, hexcode, blacklist=None, whitelist=None):
     """Runs the prohibited bytes analysis againsts the shellcode.
 
     Args:
