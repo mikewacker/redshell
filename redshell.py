@@ -8,14 +8,28 @@ import sys
 
 # Create argument parser.
 
+_INPUT_FMTS = ["hex", "asm_text"]
+
+class InputFmtAction(argparse.Action):
+    """Stores the input format and file path."""
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        assert self.dest.startswith("from_")
+        fmt = self.dest[5:]
+        assert fmt in _INPUT_FMTS
+        setattr(namespace, "fmt", fmt)
+        setattr(namespace, "input", value)
+
 parser = argparse.ArgumentParser(
     description="Helps home shellcode-based attacks using shellnoob.",
     epilog="Example: redshell --hex shellcode.hex --blacklist 00,09-0d,20")
 input_group = parser.add_mutually_exclusive_group(required=True)
 input_group.add_argument(
-    "--hex", type=argparse.FileType("r"),
-    metavar="PATH", help=".hex file containing shellcode")
-input_group.add_argument("--asm", help="assembly instructions")
+    "--from-hex", metavar="PATH", action=InputFmtAction,
+    help="ShellNoob's hex format")
+input_group.add_argument(
+    "--from-asm-text", metavar="ASM", action=InputFmtAction,
+    help="assembly code as text")
 pb_group = parser.add_mutually_exclusive_group()
 pb_group.add_argument(
     "--blacklist",
@@ -37,19 +51,28 @@ def main(argv):
     """Main method."""
     args = parser.parse_args(argv[1:])
     snoob = ShellNoob(args.is_64, args.intel)
-    hexcode = _extract_hex_code(args)
+    hexcode = _extract_hex_code(args, snoob)
     hexdump = hex_dump(hexcode)
     print_hex_dump(hexdump)
     inss = pba(snoob, hexcode, args.blacklist, args.whitelist)
     print_pba(inss)
 
-def _extract_hex_code(args):
+def _extract_hex_code(args, snoob):
     """Extracts the shellcode in hex form."""
-    if args.asm:
-        return snoob.asm_to_hex(args.asm)
+    input = _read_input(args)
+    if args.fmt == "asm_text":
+        return snoob.asm_to_hex(input)
     else:
-        with args.hex as f:
-            return f.read()
+        return input.decode("utf-8")
+
+def _read_input(args):
+    """Reads the input."""
+    if args.fmt == "asm_text":
+        return args.input
+    if args.input == "-":
+        return sys.stdin.read().encode("utf-8")
+    with open(args.input, "rb") as f:
+        return f.read()
 
 def hex_dump(hexcode):
     """Performs a hex dump using xxd."""
