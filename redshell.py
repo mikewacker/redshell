@@ -23,11 +23,11 @@ pb_group.add_argument(
    "--whitelist",
    metavar="LIST", help="list of whitelisted bytes or byte ranges")
 parser.add_argument(
-    "--arch", choices=["32", "64"], default="64",
-    help="32-bit or 64-bit architecture (default: 64)")
+    "--64", dest="is_64", action="store_true",
+    help="64-bit architecture (default: 32-bit)")
 parser.add_argument(
-    "--asm-syntax", choices=["intel", "att"], default="intel",
-    help="assembly syntax (default: intel)")
+    "--intel", action="store_true",
+    help="Intel assembly syntax (default: AT&T)")
 
 
 # Command-line interface.
@@ -37,9 +37,7 @@ def main(argv):
     args = parser.parse_args(argv[1:])
 
     # Build the ShellNoob instance.
-    is_64 = args.arch == 64
-    is_intel = args.asm_syntax == "intel"
-    snoob = ShellNoob(is_64, is_intel)
+    snoob = ShellNoob(args.is_64, args.intel)
 
     # Extract the hexcode.
     if args.asm:
