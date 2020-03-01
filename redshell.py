@@ -8,7 +8,8 @@ import sys
 
 # Create argument parser.
 
-_INPUT_FMTS = ["hex", "asm_text"]
+_INPUT_FMTS = ["asm", "obj", "bin", "hex", "c", "shellstorm", "asm_text"]
+_CHARSET = "utf-8"
 
 class InputFmtAction(argparse.Action):
     """Stores the input format and file path."""
@@ -18,15 +19,30 @@ class InputFmtAction(argparse.Action):
         fmt = self.dest[5:]
         assert fmt in _INPUT_FMTS
         setattr(namespace, "fmt", fmt)
-        setattr(namespace, "input", value)
+        setattr(namespace, "fp", value)
 
 parser = argparse.ArgumentParser(
     description="Helps home shellcode-based attacks using shellnoob.",
-    epilog="Example: redshell --hex shellcode.hex --blacklist 00,09-0d,20")
+    epilog="Example: redshell.py --from-shellstorm 827 --blacklist 00,09-0d,20")
 input_group = parser.add_mutually_exclusive_group(required=True)
+input_group.add_argument(
+    "--from-asm", metavar="PATH", action=InputFmtAction,
+    help="ShellNoob's asm format")
+input_group.add_argument(
+    "--from-obj", metavar="PATH", action=InputFmtAction,
+    help="ShellNoob's obj format")
+input_group.add_argument(
+    "--from-bin", metavar="PATH", action=InputFmtAction,
+    help="ShellNoob's bin format")
 input_group.add_argument(
     "--from-hex", metavar="PATH", action=InputFmtAction,
     help="ShellNoob's hex format")
+input_group.add_argument(
+    "--from-c", metavar="PATH", action=InputFmtAction,
+    help="ShellNoob's c format")
+input_group.add_argument(
+    "--from-shellstorm", metavar="ID", action=InputFmtAction,
+    help="ShellNoob's shellstorm format")
 input_group.add_argument(
     "--from-asm-text", metavar="ASM", action=InputFmtAction,
     help="assembly code as text")
@@ -51,28 +67,42 @@ def main(argv):
     """Main method."""
     args = parser.parse_args(argv[1:])
     snoob = ShellNoob(args.is_64, args.intel)
-    hexcode = _extract_hex_code(args, snoob)
+    hexcode = extract_hex_code(snoob, args.fmt, args.fp)
     hexdump = hex_dump(hexcode)
     print_hex_dump(hexdump)
     inss = pba(snoob, hexcode, args.blacklist, args.whitelist)
     print_pba(inss)
 
-def _extract_hex_code(args, snoob):
+def extract_hex_code(snoob, fmt, fp):
     """Extracts the shellcode in hex form."""
-    input = _read_input(args)
-    if args.fmt == "asm_text":
-        return snoob.asm_to_hex(input)
-    else:
-        return input.decode("utf-8")
+    input = _read_input(fmt, fp)
+    return _convert_to_hex(snoob, fmt, input)
 
-def _read_input(args):
-    """Reads the input."""
-    if args.fmt == "asm_text":
-        return args.input
-    if args.input == "-":
-        return sys.stdin.read().encode("utf-8")
-    with open(args.input, "rb") as f:
+def _read_input(fmt, fp):
+    """Reads the input as bytes."""
+    if fmt in ["shellstorm", "asm_text"]:
+        return fp.encode(_CHARSET)
+    if fp == "-":
+        return sys.stdin.buffer.read()
+    with open(fp, "rb") as f:
         return f.read()
+
+def _convert_to_hex(snoob, fmt, input):
+    """Converts the input to ShellNoob's hex format."""
+    # ShellNoob still has some kinks for Python 3:
+    # *   A few formats must use string inputs.
+    # *   The output can be either a bytes or a str.
+    fmt = "asm" if fmt == "asm_text" else fmt
+    if fmt in ["c", "shellstorm"]:
+        input = input.decode(_CHARSET)
+    if fmt == "hex":
+        output = input
+    else:
+        conversion = "{:s}_to_hex".format(fmt)
+        output = getattr(snoob, conversion)(input)
+    if type(output) != str:
+        output = output.decode(_CHARSET)
+    return output
 
 def hex_dump(hexcode):
     """Performs a hex dump using xxd."""

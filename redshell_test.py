@@ -5,6 +5,42 @@ from shellnoob import ShellNoob
 
 class RedShellTestCase(unittest.TestCase):
 
+    def testExtractHexCode_Asm(self):
+        self._testExtractHexCode_File("asm")
+
+    def testExtractHexCode_Obj(self):
+        self._testExtractHexCode_File("obj")
+
+    def testExtractHexCode_Bin(self):
+        self._testExtractHexCode_File("bin")
+
+    def testExtractHexCode_Hex(self):
+        self._testExtractHexCode_File("hex")
+
+    def testExtractHexCode_C(self):
+        self._testExtractHexCode_File("c")
+
+    def testExtractHexCode_ShellStorm(self):
+        snoob = ShellNoob(flag_64_bit=False, flag_intel=True)
+        hexcode = redshell.extract_hex_code(snoob, "shellstorm", "827")
+        expected_hexcode = (
+            "31c050682f2f7368682f62696e89e3505389e1b00bcd80")
+        self.assertEqual(hexcode, expected_hexcode)
+
+    def testExtractHexCode_AsmText(self):
+        snoob = ShellNoob(flag_64_bit=False, flag_intel=True)
+        hexcode = redshell.extract_hex_code(snoob, "asm_text", "int 0x80")
+        expected_hexcode = "cd80"
+        self.assertEqual(hexcode, expected_hexcode)
+
+    def _testExtractHexCode_File(self, fmt):
+        snoob = ShellNoob(flag_64_bit=False, flag_intel=True)
+        path = "testdata/shellcode.{:s}".format(fmt)
+        hexcode = redshell.extract_hex_code(snoob, fmt, path)
+        expected_hexcode = (
+            "31c050682f2f7368682f62696e89e3505389e1b00bcd80")
+        self.assertEqual(hexcode, expected_hexcode)
+
     def test_hex_dump(self):
         hexcode = "31db31c0b03c0f05"
         out = redshell.hex_dump(hexcode)
