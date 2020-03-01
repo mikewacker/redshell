@@ -3,6 +3,7 @@
 import argparse
 import collections
 from shellnoob import ShellNoob
+import subprocess
 import sys
 
 # Create argument parser.
@@ -35,31 +36,42 @@ parser.add_argument(
 def main(argv):
     """Main method."""
     args = parser.parse_args(argv[1:])
-
-    # Build the ShellNoob instance.
     snoob = ShellNoob(args.is_64, args.intel)
-
-    # Extract the hexcode.
-    if args.asm:
-        hexcode = snoob.asm_to_hex(args.asm)
-        print("Hexcode\n-------\n{:s}\n".format(hexcode))
-    else:
-        with args.hex as f:
-            hexcode = f.read()
-
-    # Run and print the analysis.
+    hexcode = _extract_hex_code(args)
+    hexdump = hex_dump(hexcode)
+    print_hex_dump(hexdump)
     inss = pba(snoob, hexcode, args.blacklist, args.whitelist)
     print_pba(inss)
 
+def _extract_hex_code(args):
+    """Extracts the shellcode in hex form."""
+    if args.asm:
+        return snoob.asm_to_hex(args.asm)
+    else:
+        with args.hex as f:
+            return f.read()
+
+def hex_dump(hexcode):
+    """Performs a hex dump using xxd."""
+    bytecode = bytes.fromhex(hexcode)
+    cp = subprocess.run(["xxd"], input=bytecode, stdout=subprocess.PIPE)
+    if cp.returncode:
+        raise RuntimeError("xxd failed")
+    return cp.stdout.decode("utf-8")
+
+def print_hex_dump(hexdump):
+    """Prints the hex dump."""
+    print("--------\nHex Dump\n--------")
+    print(hexdump)
+
 def print_pba(inss):
     """Prints the prohibited bytes."""
-    print("Assembly\n--------")
+    print("--------\nAssembly\n--------")
     num_prohibited_bytes = 0
     for ins in inss:
         print("{:32s} # {:s}".format(ins.ins, ins.hex))
         for byte in ins.bytes:
-            print("    {:s} [index 0x{:x}, column {:d}]".format(
-                byte.hex, byte.index, 2 * byte.index + 1))
+            print("    {:s} [index 0x{:x}]".format(byte.hex, byte.index))
             num_prohibited_bytes += 1
     print()
     if num_prohibited_bytes:

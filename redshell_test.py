@@ -5,6 +5,13 @@ from shellnoob import ShellNoob
 
 class RedShellTestCase(unittest.TestCase):
 
+    def test_hex_dump(self):
+        hexcode = "31db31c0b03c0f05"
+        out = redshell.hex_dump(hexcode)
+        expected_out = (
+            "00000000: 31db 31c0 b03c 0f05                      1.1..<..\n")
+        self.assertEqual(out, expected_out)
+
     def test_pba(self):
         snoob = ShellNoob(flag_64_bit=True, flag_intel=True)
         hexcode = "31db31c0b03c0f05"
