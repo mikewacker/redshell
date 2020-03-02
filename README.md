@@ -9,6 +9,37 @@ Red Shell helps you both detect and fix prohibited bytes in your shellcode.
 You could say that ShellNoob produces the green shell, and Red Shell helps home the shellcode-based attack
 and navigate around any restrictions for the input buffer, turning that green shell into a red shell.
 
+## Setup
+
+To run Red Shell, you just need to ensure that ShellNoob is in your Python path, as Red Shell will import that tool.
+
+## Usage
+
+```
+> ./redshell.py --help
+usage: redshell.py [-h]
+                   (--from-asm PATH | --from-obj PATH | --from-bin PATH | --from-hex PATH | --from-c PATH | --from-shellstorm ID | --from-asm-text ASM)
+                   [--blacklist LIST | --whitelist LIST] [--64] [--intel]
+
+Helps home shellcode-based attacks using shellnoob.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --from-asm PATH       ShellNoob's asm format
+  --from-obj PATH       ShellNoob's obj format
+  --from-bin PATH       ShellNoob's bin format
+  --from-hex PATH       ShellNoob's hex format
+  --from-c PATH         ShellNoob's c format
+  --from-shellstorm ID  ShellNoob's shellstorm format
+  --from-asm-text ASM   assembly code as text
+  --blacklist LIST      list of blacklisted bytes or byte ranges
+  --whitelist LIST      list of whitelisted bytes or byte ranges
+  --64                  64-bit architecture (default: 32-bit)
+  --intel               Intel assembly syntax (default: AT&T)
+
+Example: redshell.py --from-shellstorm 827 --blacklist 00,09-0d,20
+```
+
 ## Example
 
 Let's assume that we found a buffer overflow vulnerability in an x86 application with a `scanf()` call:
